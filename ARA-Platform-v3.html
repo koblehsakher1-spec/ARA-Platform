@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARA Platform — Educational Suite</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+  <style>
+    :root {
+      --ara-blue: #2563eb;
+      --ara-indigo: #4f46e5;
+      --ara-dark: #0f172a;
+    }
+    body { font-family: 'DM Sans', sans-serif; }
+    h1, h2, h3, .font-display { font-family: 'Syne', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .sidebar-glass {
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .tool-card {
+      transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .tool-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px -8px rgba(37,99,235,0.25);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      transition: all 0.2s;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1d4ed8, #4338ca);
+      box-shadow: 0 8px 24px -4px rgba(79,70,229,0.4);
+    }
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1e40af, #4338ca);
+    }
+    .chat-bubble-ai {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .streaming-cursor::after {
+      content: '▋';
+      animation: blink 0.8s infinite;
+      color: #60a5fa;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .progress-ring { transform: rotate(-90deg); }
+    .stat-glow { box-shadow: 0 0 24px rgba(37,99,235,0.15); }
+    .highlight-btn {
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+      border: 1px solid rgba(99,102,241,0.3);
+      color: #a5b4fc;
+    }
+    .highlight-btn:hover {
+      background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25));
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; border: none !important; box-shadow: none !important; }
+      .no-print { display: none !important; }
+      table { page-break-inside: auto; width: 100%; }
+      tr { page-break-inside: avoid; }
+      h1,h2,h3,h4 { page-break-after: avoid; }
+    }
+
+    .dark-card {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .input-dark {
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e2e8f0;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .input-dark:focus { border-color: #2563eb; outline: none; }
+    .input-dark::placeholder { color: #475569; }
+    
+    .badge-new {
+      background: linear-gradient(135deg,#059669,#0d9488);
+      font-size: 9px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Flash Cards */
+    .flip-card { perspective: 1000px; cursor: pointer; }
+    .flip-card-inner { transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); transform-style: preserve-3d; position: relative; }
+    .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+    .flip-card-front, .flip-card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .flip-card-back { transform: rotateY(180deg); position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+    .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    
+    /* Light mode overrides */
+    body:not(.dark-mode-on) .dark-card {
+      background: #ffffff !important;
+      border-color: rgba(0,0,0,0.08) !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    body:not(.dark-mode-on) .sidebar-glass, body:not(.dark-mode-on) aside {
+      background: #ffffff !important;
+    }
+    body:not(.dark-mode-on) .input-dark {
+      background: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+      color: #1e293b !important;
+    }
+    body:not(.dark-mode-on) .input-dark::placeholder { color: #94a3b8 !important; }
+    body:not(.dark-mode-on) { color: #1e293b; }
+    body:not(.dark-mode-on) .text-white { color: #0f172a !important; }
+    body:not(.dark-mode-on) .text-slate-200 { color: #1e293b !important; }
+    body:not(.dark-mode-on) .text-slate-300 { color: #334155 !important; }
+    body:not(.dark-mode-on) .text-slate-400 { color: #475569 !important; }
+    body:not(.dark-mode-on) .text-slate-500 { color: #64748b !important; }
+    body:not(.dark-mode-on) .bg-slate-800 { background: #f1f5f9 !important; }
+    body:not(.dark-mode-on) .bg-slate-900 { background: #f8fafc !important; }
+    body:not(.dark-mode-on) .bg-slate-950 { background: #f1f5f9 !important; }
+    body:not(.dark-mode-on) .border-white\/5 { border-color: #e2e8f0 !important; }
+    body:not(.dark-mode-on) .border-white\/\[0\.07\] { border-color: #e2e8f0 !important; }
+    body:not(.dark-mode-on) .chat-bubble-ai { background: #f1f5f9 !important; border-color: #e2e8f0 !important; color: #1e293b !important; }
+    body:not(.dark-mode-on) .flip-card-front { background: #ffffff !important; color: #0f172a !important; }
+    body:not(.dark-mode-on) .flip-card-back { background: #eff6ff !important; color: #1e40af !important; }
+    body:not(.dark-mode-on) .highlight-btn { background: rgba(99,102,241,0.08) !important; color: #4338ca !important; }
+    body:not(.dark-mode-on) .gradient-text { background: linear-gradient(135deg, #1d4ed8, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.359.0",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js"
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100" id="main-body">
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useRef, useCallback } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { 
+      BookOpen, FileText, CheckSquare, LayoutDashboard, 
+      Upload, Trash2, Clock, Settings as SettingsIcon, BookMarked,
+      AlertCircle, FileDown, CheckCircle2, GraduationCap, ClipboardPaste,
+      FileType, BarChart3, Target, Activity, Loader2, LogOut, 
+      ShieldCheck, Image as ImageIcon, Lightbulb, Compass, PlayCircle,
+      Archive, User, MessageSquare, Brain, Layers, Zap, ChevronLeft,
+      ChevronRight, RotateCcw, Send, Plus, X, Globe, FlipHorizontal,
+      Map, Sparkles, BookOpenCheck, TrendingUp, Award, Eye, EyeOff,
+      Copy, Check, RefreshCw, Download
+    } from 'lucide-react';
+
+    import { initializeApp } from 'firebase/app';
+    import { 
+      getAuth, onAuthStateChanged, signOut,
+      createUserWithEmailAndPassword, signInWithEmailAndPassword,
+      sendPasswordResetEmail, updatePassword, updateProfile
+    } from 'firebase/auth';
+    import { getFirestore, collection, addDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
+
+    // ─── Firebase Config ───────────────────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: "AIzaSyCw0lUsCs4OC-hNv4zJ53BO0JRshbcJ90s",
+      authDomain: "ara-platform.firebaseapp.com",
+      projectId: "ara-platform",
+      storageBucket: "ara-platform.firebasestorage.app",
+      messagingSenderId: "314450807656",
+      appId: "1:314450807656:web:51bdd0fb7e4f934e20e4dd"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ─── AI Engine (Gemini — works from browser, no CORS issues) ─────────────
+    const GEMINI_KEY = "AIzaSyCplmA46JWG-WifqSodV2Bc_ZRX-VUv99o";
+    const callClaude = async (userPrompt, systemPrompt, expectJson = false) => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
+      const payload = {
+        contents: [{ parts: [{ text: userPrompt }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+        ]
+      };
+      if (expectJson) {
+        payload.generationConfig = { responseMimeType: "application/json" };
+      }
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `AI Error ${response.status}`);
+      }
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      if (!text) throw new Error("Empty response from AI model.");
+      if (expectJson) {
+        const clean = text.replace(/```json\n?/gi,'').replace(/```\n?/g,'').trim();
+        return JSON.parse(clean);
+      }
+      return text;
+    };
+
+    // ─── Main App ──────────────────────────────────────────────────────────────
+    function App() {
+      const [user, setUser] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+      const [currentView, setCurrentView] = useState('dashboard');
+      const [subjects, setSubjects] = useState([]);
+      const [quizResults, setQuizResults] = useState([]);
+      const [savedExplanations, setSavedExplanations] = useState([]);
+      const [savedSummaries, setSavedSummaries] = useState([]);
+      const [activeQuiz, setActiveQuiz] = useState(null);
+      const [activeSummary, setActiveSummary] = useState(null);
+      const [activeFlashcards, setActiveFlashcards] = useState(null);
+      const [sidebarOpen, setSidebarOpen] = useState(false);
+      const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('ara_dark') === 'true');
+
+      useEffect(() => {
+        localStorage.setItem('ara_dark', isDarkMode);
+        const root = document.documentElement;
+        if (isDarkMode) {
+          document.body.style.background = '#020617';
+          root.classList.add('dark-mode-on');
+        } else {
+          document.body.style.background = '#f1f5f9';
+          root.classList.remove('dark-mode-on');
+        }
+      }, [isDarkMode]);
+
+      useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, u => { setUser(u); setAuthLoading(false); });
+        return unsubscribe;
+      }, []);
+
+      useEffect(() => {
+        if (!user) return;
+        const loadData = async () => {
+          const loadCol = async (key, setter) => {
+            const rawData = await window.localforage.getItem(`ara_${key}_${user.uid}`);
+            const localData = Array.isArray(rawData) ? rawData : [];
+            setter(localData);
+            try {
+              const snap = await getDocs(collection(db, 'users', user.uid, key));
+              if (!snap.empty) {
+                const cloudData = snap.docs.map(d => ({ dbId: d.id, ...d.data() }));
+                if (cloudData.length >= localData.length) {
+                  cloudData.sort((a, b) => b.timestamp - a.timestamp);
+                  setter(cloudData);
+                  await window.localforage.setItem(`ara_${key}_${user.uid}`, cloudData);
+                }
+              }
+            } catch(e) {}
+          };
+          await loadCol('subjects', setSubjects);
+          await loadCol('quiz_results', setQuizResults);
+          await loadCol('explanations', setSavedExplanations);
+          await loadCol('summaries', setSavedSummaries);
+        };
+        loadData();
+      }, [user]);
+
+      useEffect(() => {
+        const loadScript = (src, check) => {
+          if (window[check]) return;
+          const s = document.createElement('script'); s.src = src; s.async = true; document.body.appendChild(s);
+        };
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", "html2canvas");
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js", "mammoth");
+        loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js", "pdfjsLib");
+      }, []);
+
+      const saveArtifact = async (colName, data, stateSetter, currentState) => {
+        if (!user) return;
+        const payload = { ...data, id: Date.now().toString(), date: new Date().toLocaleDateString('en-US'), timestamp: Date.now() };
+        const safeState = Array.isArray(currentState) ? currentState : [];
+        const updated = [payload, ...safeState];
+        stateSetter(updated);
+        await window.localforage.setItem(`ara_${colName}_${user.uid}`, updated);
+        try { await addDoc(collection(db, 'users', user.uid, colName), payload); } catch(e) {}
+      };
+
+      const handleDeleteSubject = async (subjectId) => {
+        if (!user) return;
+        const safe = Array.isArray(subjects) ? subjects : [];
+        const target = safe.find(s => s.id === subjectId);
+        const updated = safe.filter(s => s.id !== subjectId);
+        setSubjects(updated);
+        await window.localforage.setItem(`ara_subjects_${user.uid}`, updated);
+        try { if(target?.dbId) await deleteDoc(doc(db, 'users', user.uid, 'subjects', target.dbId)); } catch(e) {}
+      };
+
+      if (authLoading) return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950">
+          <div className="relative w-16 h-16 mb-6">
+            <div className="absolute inset-0 rounded-full border-2 border-blue-500/30 animate-ping"></div>
+            <div className="absolute inset-2 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-slate-400 text-sm font-medium tracking-widest uppercase">Initializing ARA</p>
+        </div>
+      );
+
+      if (!user) return <AuthScreen />;
+
+      const safeSubjects = Array.isArray(subjects) ? subjects : [];
+      const safeQuizResults = Array.isArray(quizResults) ? quizResults : [];
+      const safeExplanations = Array.isArray(savedExplanations) ? savedExplanations : [];
+      const safeSummaries = Array.isArray(savedSummaries) ? savedSummaries : [];
+
+      const renderView = () => {
+        switch(currentView) {
+          case 'dashboard': return <Dashboard subjectsCount={safeSubjects.length} results={safeQuizResults} explCount={safeExplanations.length} sumCount={safeSummaries.length} setView={setCurrentView} />;
+          case 'library': return <Library subjects={safeSubjects} onAddSubject={(d) => saveArtifact('subjects', d, setSubjects, safeSubjects)} onDeleteSubject={handleDeleteSubject} />;
+          case 'explanation': return <ExplanationEngine subjects={safeSubjects} onSaveExpl={(d) => saveArtifact('explanations', d, setSavedExplanations, safeExplanations)} />;
+          case 'summary-maker': return <SummaryMaker subjects={safeSubjects} onSummaryGenerated={(s) => { setActiveSummary(s); saveArtifact('summaries', {title:s.title,type:s.outputType}, setSavedSummaries, safeSummaries); setCurrentView('summary-viewer'); }} />;
+          case 'summary-viewer': return <SummaryViewer summary={activeSummary} onBack={() => setCurrentView('summary-maker')} />;
+          case 'quiz-maker': return <QuizMaker subjects={safeSubjects} onQuizGenerated={(q) => { setActiveQuiz(q); setCurrentView('quiz-player'); }} />;
+          case 'quiz-player': return <QuizPlayer quiz={activeQuiz} onFinish={() => setCurrentView('dashboard')} onSaveResult={(d) => saveArtifact('quiz_results', d, setQuizResults, safeQuizResults)} />;
+          case 'flashcards': return <FlashcardMaker subjects={safeSubjects} onCardsGenerated={(cards) => { setActiveFlashcards(cards); setCurrentView('flashcard-player'); }} />;
+          case 'flashcard-player': return <FlashcardPlayer cards={activeFlashcards} onBack={() => setCurrentView('flashcards')} />;
+          case 'chat': return <ChatWithDoc subjects={safeSubjects} />;
+          case 'translator': return <SmartTranslator subjects={safeSubjects} />;
+          case 'mindmap': return <MindMapGenerator subjects={safeSubjects} />;
+          case 'integrated-pathway': return <IntegratedPathway subjects={safeSubjects} onSaveResult={(d) => saveArtifact('quiz_results', d, setQuizResults, safeQuizResults)} onSaveExpl={(d) => saveArtifact('explanations', d, setSavedExplanations, safeExplanations)} onSaveSum={(d) => saveArtifact('summaries', d, setSavedSummaries, safeSummaries)} />;
+          case 'settings': return <Settings user={user} clearLocalData={() => { setSubjects([]); setQuizResults([]); setSavedExplanations([]); setSavedSummaries([]); }} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />;
+          default: return <Dashboard subjectsCount={safeSubjects.length} results={safeQuizResults} explCount={safeExplanations.length} sumCount={safeSummaries.length} setView={setCurrentView} />;
+        }
+      };
+
+      const displayName = user.displayName || 'ARA Student';
+      const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+
+      const navItems = [
+        { id: 'dashboard', icon: <LayoutDashboard size={16}/>, label: 'Dashboard' },
+        { id: 'library', icon: <BookMarked size={16}/>, label: 'Document Library' },
+        null,
+        { id: 'explanation', icon: <Lightbulb size={16}/>, label: 'Explanation Engine' },
+        { id: 'summary-maker', icon: <FileText size={16}/>, label: 'Synthesis Engine' },
+        { id: 'quiz-maker', icon: <CheckSquare size={16}/>, label: 'Assessment Engine' },
+        { id: 'flashcards', icon: <FlipHorizontal size={16}/>, label: 'Flash Cards', badge: 'NEW' },
+        { id: 'chat', icon: <MessageSquare size={16}/>, label: 'Chat with Doc', badge: 'NEW' },
+        { id: 'translator', icon: <Globe size={16}/>, label: 'Smart Translator', badge: 'NEW' },
+        { id: 'mindmap', icon: <Map size={16}/>, label: 'Mind Map', badge: 'NEW' },
+        null,
+        { id: 'integrated-pathway', icon: <Compass size={16}/>, label: 'Integrated Pathway', highlight: true },
+        { id: 'settings', icon: <SettingsIcon size={16}/>, label: 'Settings' },
+      ];
+
+      return (
+        <div className={`min-h-screen flex overflow-hidden transition-colors duration-300 ${isDarkMode ? "bg-slate-950" : "bg-slate-100"}`}>
+          {/* Mobile overlay */}
+          {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
+
+          {/* Sidebar */}
+          <aside className={`fixed md:relative z-40 h-full md:h-screen w-72 flex flex-col transition-transform duration-300 ${isDarkMode ? "sidebar-glass" : "bg-white border-r border-slate-200 shadow-sm"} ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+            {/* User Profile */}
+            <div className="p-6 border-b border-white/5">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-display font-bold text-sm text-white shadow-lg">
+                    {initials}
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900"></div>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="font-semibold text-sm text-white truncate">{displayName}</p>
+                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+              {navItems.map((item, i) => {
+                if (item === null) return <div key={i} className="h-px bg-white/5 my-2 mx-1" />;
+                const isActive = currentView === item.id || (item.id === 'summary-maker' && currentView === 'summary-viewer') || (item.id === 'flashcards' && currentView === 'flashcard-player');
+                return (
+                  <button key={item.id} onClick={() => { setCurrentView(item.id); setSidebarOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-150 group ${isActive ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : item.highlight ? 'highlight-btn' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}>
+                    <span className={isActive ? 'text-blue-400' : item.highlight ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}>{item.icon}</span>
+                    <span className="text-sm font-medium flex-1">{item.label}</span>
+                    {item.badge && <span className="badge-new text-white px-1.5 py-0.5 rounded font-bold uppercase">{item.badge}</span>}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* ARA Brand */}
+            <div className="p-4 border-t border-white/5">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <Sparkles size={12} className="text-white" />
+                </div>
+                <div>
+                  <p className="font-display font-bold text-sm text-white leading-none">ARA Platform</p>
+                  <p className="text-[10px] text-slate-500 leading-none mt-0.5">Powered by Gemini AI</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col h-screen overflow-hidden">
+            {/* Top Bar */}
+            <header className={`flex-shrink-0 h-14 border-b flex items-center justify-between px-4 md:px-6 backdrop-blur-sm transition-colors ${isDarkMode ? "border-white/5 bg-slate-900/50" : "border-slate-200 bg-white/90 shadow-sm"}`}>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5">
+                  <Layers size={18} />
+                </button>
+                <div>
+                  <h1 className="font-display font-bold text-base text-white leading-none gradient-text">ARA Platform</h1>
+                  <p className="text-[10px] text-slate-500 leading-none mt-0.5 hidden sm:block">Educational Suite</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  AI Active
+                </div>
+              </div>
+            </header>
+
+            {/* View Content */}
+            <main className="flex-1 overflow-y-auto">
+              {renderView()}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Auth Screen ───────────────────────────────────────────────────────────
+    function AuthScreen() {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [fName, setFName] = useState('');
+      const [lName, setLName] = useState('');
+      const [isLogin, setIsLogin] = useState(true);
+      const [isForgot, setIsForgot] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+      const [msg, setMsg] = useState('');
+      const [showPwd, setShowPwd] = useState(false);
+
+      const handleAuth = async (e) => {
+        e.preventDefault(); setLoading(true); setError('');
+        try {
+          if (isLogin) {
+            await signInWithEmailAndPassword(auth, email, password);
+          } else {
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(cred.user, { displayName: `${fName} ${lName}`.trim() });
+            window.location.reload();
+          }
+        } catch(err) { setError(err.message.replace('Firebase: ','').replace(/\(.*\)/,'')); }
+        finally { setLoading(false); }
+      };
+
+      const handleReset = async (e) => {
+        e.preventDefault(); setLoading(true); setError(''); setMsg('');
+        try { await sendPasswordResetEmail(auth, email); setMsg('Reset link sent to your email.'); }
+        catch(err) { setError('Email not registered or invalid.'); }
+        finally { setLoading(false); }
+      };
+
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl"></div>
+          </div>
+
+          <div className="w-full max-w-md relative z-10">
+            {/* Logo Area */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-xl mb-4">
+                <Sparkles size={24} className="text-white" />
+              </div>
+              <h1 className="font-display font-bold text-3xl gradient-text">ARA Platform</h1>
+              <p className="text-slate-500 text-sm mt-1">Educational Suite · Powered by Gemini AI</p>
+            </div>
+
+            <div className="dark-card rounded-2xl p-8 shadow-2xl">
+              <h2 className="font-display font-bold text-xl text-white mb-6">
+                {isForgot ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create Account'}
+              </h2>
+
+              {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">{error}</div>}
+              {msg && <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-sm">{msg}</div>}
+
+              {isForgot ? (
+                <form onSubmit={handleReset} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+                    <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required className="w-full p-3 rounded-xl input-dark" placeholder="your@email.com" />
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2">
+                    {loading ? <Loader2 size={16} className="animate-spin"/> : 'Send Reset Link'}
+                  </button>
+                  <button type="button" onClick={() => { setIsForgot(false); setError(''); }} className="w-full text-sm text-slate-500 hover:text-slate-300 transition-colors">
+                    ← Back to login
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleAuth} className="space-y-4">
+                  {!isLogin && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-2">First Name</label>
+                        <input type="text" value={fName} onChange={e=>setFName(e.target.value)} required className="w-full p-3 rounded-xl input-dark" placeholder="John" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-2">Last Name</label>
+                        <input type="text" value={lName} onChange={e=>setLName(e.target.value)} required className="w-full p-3 rounded-xl input-dark" placeholder="Doe" />
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+                    <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required className="w-full p-3 rounded-xl input-dark" placeholder="your@email.com" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <label className="text-sm font-medium text-slate-400">Password</label>
+                      {isLogin && <button type="button" onClick={() => { setIsForgot(true); setError(''); }} className="text-xs text-blue-400 hover:text-blue-300">Forgot password?</button>}
+                    </div>
+                    <div className="relative">
+                      <input type={showPwd ? 'text' : 'password'} value={password} onChange={e=>setPassword(e.target.value)} required minLength="6" className="w-full p-3 pr-10 rounded-xl input-dark" placeholder="Min. 6 characters" />
+                      <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                        {showPwd ? <EyeOff size={16}/> : <Eye size={16}/>}
+                      </button>
+                    </div>
+                  </div>
+                  <button type="submit" disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2 mt-2">
+                    {loading ? <Loader2 size={16} className="animate-spin"/> : isLogin ? 'Sign In' : 'Create Account'}
+                  </button>
+                </form>
+              )}
+
+              {!isForgot && (
+                <div className="mt-6 pt-6 border-t border-white/5 text-center">
+                  <button onClick={() => { setIsLogin(!isLogin); setError(''); }} className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                    {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Dashboard ────────────────────────────────────────────────────────────
+    function Dashboard({ subjectsCount, results, explCount, sumCount, setView }) {
+      const avgScore = results.length > 0 ? Math.round(results.reduce((a,c) => a + c.percentage, 0) / results.length) : 0;
+
+      const tools = [
+        { id:'integrated-pathway', icon:<Compass size={20}/>, label:'Integrated Pathway', desc:'Explanation + Synthesis + Quiz in one timed session', color:'from-blue-600 to-indigo-600', span: 'md:col-span-2' },
+        { id:'explanation', icon:<Lightbulb size={20}/>, label:'Explanation Engine', desc:'Deep conceptual explanations from your docs', color:'from-blue-500/20 to-blue-600/10', light:true },
+        { id:'summary-maker', icon:<FileText size={20}/>, label:'Synthesis Engine', desc:'Generate PDFs and visual summaries', color:'from-indigo-500/20 to-indigo-600/10', light:true },
+        { id:'quiz-maker', icon:<CheckSquare size={20}/>, label:'Assessment Engine', desc:'Auto-generate MCQ exams with timer', color:'from-violet-500/20 to-violet-600/10', light:true },
+        { id:'flashcards', icon:<FlipHorizontal size={20}/>, label:'Flash Cards', desc:'Interactive study cards from your content', color:'from-emerald-500/20 to-emerald-600/10', light:true, badge:'NEW' },
+        { id:'chat', icon:<MessageSquare size={20}/>, label:'Chat with Doc', desc:'Ask anything about your uploaded files', color:'from-cyan-500/20 to-cyan-600/10', light:true, badge:'NEW' },
+        { id:'translator', icon:<Globe size={20}/>, label:'Smart Translator', desc:'Translate content while keeping technical terms', color:'from-amber-500/20 to-amber-600/10', light:true, badge:'NEW' },
+        { id:'mindmap', icon:<Map size={20}/>, label:'Mind Map Generator', desc:'Visual topic maps from your documents', color:'from-rose-500/20 to-rose-600/10', light:true, badge:'NEW' },
+      ];
+
+      return (
+        <div className="p-4 md:p-8 max-w-6xl mx-auto animate-fade-in">
+          {/* Hero */}
+          <div className="mb-8 pt-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <Sparkles size={14} className="text-white" />
+              </div>
+              <h1 className="font-display font-bold text-2xl md:text-3xl gradient-text">ARA Platform</h1>
+            </div>
+            <p className="text-slate-500 text-sm ml-11">Your AI-powered academic workspace</p>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            {[
+              { label:'Documents', value:subjectsCount, icon:<BookMarked size={16}/>, color:'blue' },
+              { label:'Explanations', value:explCount, icon:<Lightbulb size={16}/>, color:'indigo' },
+              { label:'Summaries', value:sumCount, icon:<FileText size={16}/>, color:'violet' },
+              { label:'Avg Score', value:`${avgScore}%`, icon:<BarChart3 size={16}/>, color:avgScore >= 75 ? 'emerald' : 'amber' },
+            ].map((s,i) => (
+              <div key={i} className="dark-card rounded-xl p-4 stat-glow">
+                <div className={`w-8 h-8 rounded-lg bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-400 mb-3`}>{s.icon}</div>
+                <p className="text-2xl font-display font-bold text-white">{s.value}</p>
+                <p className="text-xs text-slate-500 font-medium mt-0.5 uppercase tracking-wider">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Tools Grid */}
+          <div className="mb-4">
+            <h2 className="font-display font-semibold text-sm text-slate-400 uppercase tracking-widest mb-4">Tools</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              {tools.map(tool => (
+                <div key={tool.id} onClick={() => setView(tool.id)}
+                  className={`tool-card relative rounded-xl p-5 cursor-pointer border border-white/5 bg-gradient-to-br ${tool.color} overflow-hidden ${tool.span || ''}`}>
+                  {!tool.light ? (
+                    <>
+                      <div className="absolute right-0 top-0 opacity-10 translate-x-4 -translate-y-4">{React.cloneElement(tool.icon, {size:80})}</div>
+                      <div className="relative">
+                        <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center mb-3 text-white">{tool.icon}</div>
+                        <h3 className="font-display font-bold text-lg text-white mb-1">{tool.label}</h3>
+                        <p className="text-blue-100/70 text-sm">{tool.desc}</p>
+                        <span className="inline-flex items-center gap-1 mt-3 text-xs font-semibold bg-white/15 text-white px-3 py-1.5 rounded-lg">Launch →</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-300">{tool.icon}</div>
+                        {tool.badge && <span className="badge-new text-white px-1.5 py-0.5 rounded font-bold uppercase">{tool.badge}</span>}
+                      </div>
+                      <h3 className="font-display font-semibold text-sm text-white mb-1">{tool.label}</h3>
+                      <p className="text-slate-400 text-xs leading-relaxed">{tool.desc}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Quizzes */}
+          {results.length > 0 && (
+            <div className="dark-card rounded-xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-white/5 flex items-center gap-2">
+                <Archive size={14} className="text-slate-500" />
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Recent Assessments</h3>
+              </div>
+              <div className="divide-y divide-white/5">
+                {results.slice(0,5).map((r,i) => (
+                  <div key={i} className="px-5 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-slate-200 truncate max-w-xs">{r.quizTitle}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{r.date}</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-lg text-xs font-bold ${r.percentage >= 50 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                      {r.percentage}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ─── Library ──────────────────────────────────────────────────────────────
+    function Library({ subjects, onAddSubject, onDeleteSubject }) {
+      const [isUploading, setIsUploading] = useState(false);
+      const [name, setName] = useState('');
+      const [mode, setMode] = useState('file');
+      const [pastedText, setPastedText] = useState('');
+      const fileRef = useRef(null);
+
+      const extractText = async (file) => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'txt') return new Promise((res, rej) => { const r = new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsText(file); });
+        if (ext === 'docx') return (await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })).value;
+        if (ext === 'pdf') {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+          const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) text += (await (await pdf.getPage(i)).getTextContent()).items.map(x=>x.str).join(' ') + '\n';
+          return text;
+        }
+        throw new Error('Unsupported format. Use PDF, DOCX, or TXT.');
+      };
+
+      const handleUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !name.trim()) return alert('Enter a document name first.');
+        setIsUploading(true);
+        try {
+          const content = await extractText(file);
+          await onAddSubject({ name: name.trim(), fileName: file.name, content });
+          setName('');
+        } catch(err) { alert(err.message); }
+        finally { setIsUploading(false); if(fileRef.current) fileRef.current.value=''; }
+      };
+
+      const handlePaste = async () => {
+        if (!name.trim() || !pastedText.trim()) return alert('Enter name and text.');
+        setIsUploading(true);
+        await onAddSubject({ name: name.trim(), fileName: 'Text Input', content: pastedText });
+        setName(''); setPastedText(''); setIsUploading(false);
+      };
+
+      return (
+        <div className="p-4 md:p-8 max-w-4xl mx-auto animate-fade-in">
+          <div className="flex items-center gap-3 mb-6">
+            <BookMarked size={20} className="text-blue-400" />
+            <h2 className="font-display font-bold text-xl text-white">Document Library</h2>
+          </div>
+
+          {/* Upload Card */}
+          <div className="dark-card rounded-2xl overflow-hidden mb-6">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-slate-300">Add New Document</h3>
+              <div className="flex bg-slate-800 rounded-lg p-0.5 gap-0.5">
+                {['file','paste'].map(m => (
+                  <button key={m} onClick={() => setMode(m)}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${mode === m ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
+                    {m === 'file' ? 'Upload File' : 'Paste Text'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Document Name</label>
+                <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Histology Chapter 3" className="w-full p-3 rounded-xl input-dark" />
+              </div>
+              {mode === 'file' ? (
+                <div className="relative">
+                  <input type="file" accept=".txt,.pdf,.docx" ref={fileRef} onChange={handleUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={isUploading || !name.trim()} />
+                  <div className={`flex flex-col items-center justify-center gap-3 p-10 rounded-xl border-2 border-dashed transition-all ${name.trim() ? 'border-blue-500/40 bg-blue-500/5 text-blue-400' : 'border-slate-700 text-slate-600'}`}>
+                    {isUploading ? <Loader2 size={28} className="animate-spin"/> : <Upload size={28}/>}
+                    <div className="text-center">
+                      <p className="font-semibold text-sm">{isUploading ? 'Processing document...' : 'Click or drag to upload'}</p>
+                      <p className="text-xs mt-1 opacity-60">PDF, DOCX, TXT supported</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <textarea value={pastedText} onChange={e=>setPastedText(e.target.value)} placeholder="Paste your content here..." rows={6} className="w-full p-3 rounded-xl input-dark resize-none" />
+                  <button onClick={handlePaste} disabled={!name.trim() || !pastedText.trim() || isUploading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold disabled:opacity-30 disabled:cursor-not-allowed">
+                    Save Document
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Document List */}
+          <div className="space-y-2">
+            {subjects.length === 0 ? (
+              <div className="dark-card rounded-xl p-12 text-center">
+                <BookOpen size={32} className="text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-500 text-sm">No documents yet. Upload your first one above.</p>
+              </div>
+            ) : subjects.map(sub => (
+              <div key={sub.id} className="dark-card rounded-xl px-5 py-4 flex items-center justify-between group">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 flex-shrink-0">
+                    <FileText size={16} />
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="font-semibold text-sm text-white truncate">{sub.name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{sub.fileName} · {sub.date}</p>
+                  </div>
+                </div>
+                <button onClick={() => { if(confirm('Delete this document?')) onDeleteSubject(sub.id); }} className="text-slate-600 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-500/10 opacity-0 group-hover:opacity-100">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Explanation Engine ───────────────────────────────────────────────────
+    function ExplanationEngine({ subjects, onSaveExpl }) {
+      const [selSub, setSelSub] = useState('');
+      const [topic, setTopic] = useState('');
+      const [language, setLanguage] = useState('English');
+      const [style, setStyle] = useState('Detailed Academic');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+      const [result, setResult] = useState('');
+
+      const handleExplain = async () => {
+        if (!selSub || !topic.trim()) return setError('Select a document and enter a topic.');
+        const sub = subjects.find(s => s.id === selSub);
+        if (!sub) return;
+        setLoading(true); setError(''); setResult('');
+        const langRule = language === 'Arabic' ? 'Explain in Arabic but keep ALL medical/scientific terms in English.' : 'Explain in English.';
+        const systemPrompt = `You are an expert academic tutor. ONLY use the provided source text. ${langRule} Return clean HTML with inline Tailwind classes. No markdown code blocks.`;
+        const userPrompt = `Source Text:\n"""${sub.content.substring(0, 120000)}"""\n\nExplain this topic: "${topic}"\nStyle: ${style}\n\nBegin with <div class="space-y-4 text-sm leading-loose">`;
+        try {
+          const res = await callClaude(userPrompt, systemPrompt);
+          const html = res.replace(/```html\n?/gi,'').replace(/```\n?/g,'').trim();
+          setResult(html);
+          onSaveExpl({ topic, subjectId: selSub, html });
+        } catch(err) { setError(err.message); }
+        finally { setLoading(false); }
+      };
+
+      return (
+        <div className="p-4 md:p-8 max-w-4xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-blue-600/10">
+              <Lightbulb size={18} className="text-blue-400" />
+              <h2 className="font-display font-bold text-lg text-white">Explanation Engine</h2>
+            </div>
+            <div className="p-6 space-y-5">
+              {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">{error}</div>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Reference Document</label>
+                  <select value={selSub} onChange={e=>setSelSub(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="">— Select document —</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Topic to Explain</label>
+                  <input type="text" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Mechanism of Muscle Contraction" className="w-full p-3 rounded-xl input-dark" onKeyDown={e => e.key === 'Enter' && handleExplain()} />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Language</label>
+                  <select value={language} onChange={e=>setLanguage(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="English">English Only</option>
+                    <option value="Arabic">Arabic (Keep Medical Terms in English)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Tutoring Style</label>
+                  <select value={style} onChange={e=>setStyle(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="Simple & Direct">Simple & Direct (Beginner)</option>
+                    <option value="Detailed Academic">Detailed Academic (Advanced)</option>
+                    <option value="Analogy-Based">Analogy-Based (Metaphors)</option>
+                    <option value="Clinical Focus">Clinical Focus (Medical)</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={handleExplain} disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                {loading ? <><Loader2 size={16} className="animate-spin"/> Analyzing...</> : <><Lightbulb size={16}/> Generate Explanation</>}
+              </button>
+              {result && (
+                <div className="mt-4 p-6 rounded-xl bg-slate-900 border border-white/5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-display font-semibold text-sm text-blue-400 flex items-center gap-2"><BookOpen size={14}/> Tutor Response</h3>
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">Saved</span>
+                  </div>
+                  <div className={`prose prose-invert prose-sm max-w-none ${language === 'Arabic' ? 'text-right' : ''}`} dangerouslySetInnerHTML={{__html: result}} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Summary / Synthesis Maker ────────────────────────────────────────────
+    function SummaryMaker({ subjects, onSummaryGenerated }) {
+      const [selSub, setSelSub] = useState('');
+      const [lesson, setLesson] = useState('');
+      const [density, setDensity] = useState('Comprehensive');
+      const [format, setFormat] = useState('Document Format');
+      const [outputType, setOutputType] = useState('document');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleGen = async () => {
+        if (!selSub || !lesson.trim()) return setError('Please fill all required fields.');
+        const sub = subjects.find(s => s.id === selSub);
+        if (!sub) return;
+        setLoading(true); setError('');
+        const styleRule = outputType === 'document'
+          ? 'Output clean HTML for A4 PDF printing. Use h2, h3, p, table, ul tags with Tailwind. Keep backgrounds white.'
+          : 'Output an infographic poster HTML with vibrant colored cards, emojis, gradients, and flexbox grids.';
+        const systemPrompt = `You are an expert academic summarizer. Return ONLY clean HTML. ${styleRule} No markdown code fences.`;
+        const userPrompt = `Source Text:\n"""${sub.content.substring(0, 120000)}"""\n\nSummarize topic: "${lesson}"\nDensity: ${density}\nFormat: ${format}\n\nBegin with <div class="space-y-6">`;
+        try {
+          const res = await callClaude(userPrompt, systemPrompt);
+          const html = res.replace(/```html\n?/gi,'').replace(/```\n?/g,'').trim();
+          onSummaryGenerated({ title: lesson, outputType, html });
+        } catch(err) { setError(err.message); }
+        finally { setLoading(false); }
+      };
+
+      return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-indigo-600/10">
+              <FileText size={18} className="text-indigo-400" />
+              <h2 className="font-display font-bold text-lg text-white">Synthesis Engine</h2>
+            </div>
+            <div className="p-6 space-y-5">
+              {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">{error}</div>}
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Source Document</label>
+                <select value={selSub} onChange={e=>setSelSub(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                  <option value="">— Select document —</option>
+                  {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Topic to Summarize</label>
+                <input type="text" value={lesson} onChange={e=>setLesson(e.target.value)} placeholder="e.g. Action Potential" className="w-full p-3 rounded-xl input-dark" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Content Density</label>
+                  <select value={density} onChange={e=>setDensity(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="Comprehensive">Comprehensive (Detailed)</option>
+                    <option value="Key Concepts">Key Concepts Only</option>
+                    <option value="Bullet Points">Bullet Points Only</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Output Type</label>
+                  <select value={outputType} onChange={e=>setOutputType(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="document">Document (PDF Print)</option>
+                    <option value="infographic">Infographic Poster</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={handleGen} disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                {loading ? <><Loader2 size={16} className="animate-spin"/> Synthesizing...</> : <><FileText size={16}/> Generate Synthesis</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function SummaryViewer({ summary, onBack }) {
+      const [exporting, setExporting] = useState(false);
+      const downloadPDF = () => window.print();
+      const downloadImage = async () => {
+        if (!window.html2canvas) return alert('Image library loading...');
+        setExporting(true);
+        const el = document.getElementById('print-area');
+        try {
+          const canvas = await window.html2canvas(el, { scale:2, useCORS:true, logging:false });
+          const link = document.createElement('a'); link.download = `${summary.title}.png`;
+          link.href = canvas.toDataURL('image/png'); link.click();
+        } finally { setExporting(false); }
+      };
+
+      return (
+        <div className="p-4 md:p-8 max-w-5xl mx-auto no-print animate-fade-in">
+          <div className="dark-card rounded-xl px-5 py-4 flex flex-wrap justify-between items-center mb-5 gap-3">
+            <button onClick={onBack} className="text-sm font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"><ChevronLeft size={16}/> Back</button>
+            <div className="flex gap-2">
+              <span className="px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-lg">Saved to Logs</span>
+              {summary.outputType === 'infographic' ? (
+                <button onClick={downloadImage} disabled={exporting} className="px-4 py-2 bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-sm font-semibold rounded-lg flex items-center gap-2">
+                  {exporting ? <Loader2 size={14} className="animate-spin"/> : <ImageIcon size={14}/>} Save Image
+                </button>
+              ) : (
+                <button onClick={downloadPDF} className="px-4 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/20 text-sm font-semibold rounded-lg flex items-center gap-2">
+                  <FileDown size={14}/> Download PDF
+                </button>
+              )}
+            </div>
+          </div>
+          <div id="print-area" className="bg-white text-black rounded-xl p-8 md:p-12 min-h-96">
+            <div className="prose prose-slate max-w-none leading-loose" dangerouslySetInnerHTML={{__html: summary.html}} />
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Quiz Maker ───────────────────────────────────────────────────────────
+    function QuizMaker({ subjects, onQuizGenerated }) {
+      const [selSub, setSelSub] = useState('');
+      const [topic, setTopic] = useState('');
+      const [count, setCount] = useState('10');
+      const [difficulty, setDifficulty] = useState('Mixed');
+      const [timeLimitH, setTimeLimitH] = useState(0);
+      const [timeLimitM, setTimeLimitM] = useState(20);
+      const [timeLimitS, setTimeLimitS] = useState(0);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleGen = async () => {
+        if (!selSub || !topic.trim()) return setError('Select a document and topic.');
+        const sub = subjects.find(s => s.id === selSub);
+        if (!sub) return;
+        setLoading(true); setError('');
+        const systemPrompt = `You are a strict assessment generator. ONLY use the source text. Return ONLY valid JSON.`;
+        const userPrompt = `Source:\n"""${sub.content.substring(0,120000)}"""\n\nGenerate ${count} ${difficulty} difficulty MCQ questions about "${topic}".\n\nReturn JSON:\n{"title":"${topic}","questions":[{"questionText":"...","options":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"brief why"}]}\n\nIMPORTANT: Return ONLY JSON. No text before or after.`;
+        try {
+          const data = await callClaude(userPrompt, systemPrompt, true);
+          if (!data.questions?.length) throw new Error('No questions generated.');
+          onQuizGenerated({ ...data, timeLimit: timeLimitH*3600 + timeLimitM*60 + timeLimitS });
+        } catch(err) { setError(err.message); }
+        finally { setLoading(false); }
+      };
+
+      return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-violet-600/10">
+              <CheckSquare size={18} className="text-violet-400" />
+              <h2 className="font-display font-bold text-lg text-white">Assessment Engine</h2>
+            </div>
+            <div className="p-6 space-y-5">
+              {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">{error}</div>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Source Document</label>
+                  <select value={selSub} onChange={e=>setSelSub(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="">— Select document —</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Topic / Chapter</label>
+                  <input type="text" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Cranial Nerves" className="w-full p-3 rounded-xl input-dark" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Number of Questions</label>
+                  <select value={count} onChange={e=>setCount(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    {['5','10','15','20','25'].map(n => <option key={n} value={n}>{n} Questions</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Difficulty</label>
+                  <select value={difficulty} onChange={e=>setDifficulty(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                    <option value="Mixed">Mixed (Recommended)</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Time Limit (Hours : Minutes : Seconds)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1 text-center">Hours</p>
+                      <input type="number" min="0" max="23" value={timeLimitH} onChange={e=>setTimeLimitH(Number(e.target.value))} className="w-full p-3 rounded-xl input-dark text-center font-mono text-lg" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1 text-center">Minutes</p>
+                      <input type="number" min="0" max="59" value={timeLimitM} onChange={e=>setTimeLimitM(Number(e.target.value))} className="w-full p-3 rounded-xl input-dark text-center font-mono text-lg" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1 text-center">Seconds</p>
+                      <input type="number" min="0" max="59" value={timeLimitS} onChange={e=>setTimeLimitS(Number(e.target.value))} className="w-full p-3 rounded-xl input-dark text-center font-mono text-lg" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1.5 text-center">Total: {timeLimitH}h {timeLimitM}m {timeLimitS}s = {timeLimitH*3600+timeLimitM*60+timeLimitS}s</p>
+                </div>
+              </div>
+              <button onClick={handleGen} disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                {loading ? <><Loader2 size={16} className="animate-spin"/> Generating Questions...</> : <><CheckSquare size={16}/> Generate Assessment</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function QuizPlayer({ quiz, onFinish, onSaveResult }) {
+      const [idx, setIdx] = useState(0);
+      const [ans, setAns] = useState({});
+      const [timeLeft, setTimeLeft] = useState(quiz?.timeLimit || 1200);
+      const [submitted, setSubmitted] = useState(false);
+      const [showExp, setShowExp] = useState({});
+
+      useEffect(() => {
+        if (submitted) return;
+        const t = setInterval(() => setTimeLeft(p => { if(p <= 1) { clearInterval(t); submit(); return 0; } return p-1; }), 1000);
+        return () => clearInterval(t);
+      }, [submitted]);
+
+      const submit = useCallback(() => {
+        if (submitted) return;
+        setSubmitted(true);
+        let score = 0;
+        quiz.questions.forEach((q,i) => { if(ans[i] === q.correctAnswerIndex) score++; });
+        const pct = Math.round((score/quiz.questions.length)*100);
+        onSaveResult({ quizTitle: quiz.title, score, totalQuestions: quiz.questions.length, percentage: pct, date: new Date().toLocaleDateString() });
+      }, [ans, quiz, submitted]);
+
+      const formatTime = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+      const score = quiz.questions.filter((q,i) => ans[i] === q.correctAnswerIndex).length;
+      const pct = Math.round((score/quiz.questions.length)*100);
+
+      if (submitted) return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl p-8 text-center mb-6">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${pct >= 50 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+              {pct >= 50 ? <Award size={36} className="text-emerald-400"/> : <Target size={36} className="text-red-400"/>}
+            </div>
+            <h2 className="font-display font-bold text-3xl text-white mb-1">{pct}%</h2>
+            <p className="text-slate-400 mb-4">{score} / {quiz.questions.length} correct</p>
+            <div className="w-full bg-slate-800 rounded-full h-2 mb-6">
+              <div className={`h-2 rounded-full transition-all ${pct >= 50 ? 'bg-emerald-500' : 'bg-red-500'}`} style={{width:`${pct}%`}} />
+            </div>
+            <button onClick={onFinish} className="px-6 py-3 btn-primary text-white font-semibold rounded-xl">Back to Dashboard</button>
+          </div>
+          <div className="space-y-3">
+            {quiz.questions.map((q,i) => {
+              const correct = ans[i] === q.correctAnswerIndex;
+              const unanswered = ans[i] === undefined;
+              return (
+                <div key={i} className={`dark-card rounded-xl p-5 border ${correct ? 'border-emerald-500/20' : 'border-red-500/20'}`}>
+                  <p className="font-semibold text-sm text-white mb-3">{i+1}. {q.questionText}</p>
+                  <div className="space-y-1.5">
+                    {q.options.map((opt,j) => (
+                      <div key={j} className={`px-3 py-2 rounded-lg text-sm ${j === q.correctAnswerIndex ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : j === ans[i] && !correct ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'text-slate-500'}`}>
+                        {opt} {j === q.correctAnswerIndex && '✓'} {j === ans[i] && !correct && '✗'}
+                      </div>
+                    ))}
+                  </div>
+                  {q.explanation && (
+                    <div className="mt-3 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg">
+                      <p className="text-xs text-blue-300 font-medium">{q.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+      const q = quiz.questions[idx];
+      return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto">
+          {/* Timer bar */}
+          <div className="dark-card rounded-xl px-5 py-3 flex items-center justify-between mb-5">
+            <h2 className="font-display font-semibold text-sm text-white truncate">{quiz.title}</h2>
+            <div className={`flex items-center gap-2 font-mono font-bold text-lg ${timeLeft < 60 ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>
+              <Clock size={16}/> {formatTime(timeLeft)}
+            </div>
+          </div>
+          <div className="dark-card rounded-2xl p-6">
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Question {idx+1} of {quiz.questions.length}</span>
+              <div className="flex gap-1">
+                {quiz.questions.map((_,i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full ${i===idx ? 'bg-blue-500' : ans[i] !== undefined ? 'bg-slate-500' : 'bg-slate-700'}`} />
+                ))}
+              </div>
+            </div>
+            <h3 className="font-display font-semibold text-lg text-white mb-5 leading-snug">{q.questionText}</h3>
+            <div className="space-y-2.5">
+              {q.options.map((opt,i) => (
+                <button key={i} onClick={() => setAns({...ans, [idx]:i})}
+                  className={`w-full p-4 rounded-xl border text-left text-sm font-medium transition-all ${ans[idx]===i ? 'bg-blue-600/20 border-blue-500/40 text-blue-300' : 'border-white/5 text-slate-300 hover:border-white/10 hover:bg-white/3'}`}>
+                  <span className="font-bold mr-2 text-slate-500">{String.fromCharCode(65+i)}.</span>{opt}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-between mt-6 pt-5 border-t border-white/5">
+              <button onClick={() => setIdx(idx-1)} disabled={idx===0} className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white disabled:opacity-30 flex items-center gap-1"><ChevronLeft size={16}/> Prev</button>
+              {idx === quiz.questions.length-1
+                ? <button onClick={submit} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl flex items-center gap-1"><CheckCircle2 size={16}/> Submit</button>
+                : <button onClick={() => setIdx(idx+1)} className="px-5 py-2 btn-primary text-white font-semibold text-sm rounded-xl flex items-center gap-1">Next <ChevronRight size={16}/></button>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Flash Cards ─────────────────────────────────────────────────────────
+    function FlashcardMaker({ subjects, onCardsGenerated }) {
+      const [selSub, setSelSub] = useState('');
+      const [topic, setTopic] = useState('');
+      const [count, setCount] = useState('15');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleGen = async () => {
+        if (!selSub || !topic.trim()) return setError('Select a document and topic.');
+        const sub = subjects.find(s => s.id === selSub);
+        if (!sub) return;
+        setLoading(true); setError('');
+        const systemPrompt = `You are a flashcard generator. Return ONLY valid JSON. No text before or after.`;
+        const userPrompt = `Source Text:\n"""${sub.content.substring(0,100000)}"""\n\nCreate ${count} flashcards about "${topic}" from the source text.\n\nReturn JSON:\n{"topic":"${topic}","cards":[{"front":"question or term","back":"detailed answer or definition"}]}\n\nIMPORTANT: Return ONLY JSON.`;
+        try {
+          const data = await callClaude(userPrompt, systemPrompt, true);
+          if (!data.cards?.length) throw new Error('No cards generated.');
+          onCardsGenerated(data);
+        } catch(err) { setError(err.message); }
+        finally { setLoading(false); }
+      };
+
+      return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-emerald-600/10">
+              <FlipHorizontal size={18} className="text-emerald-400" />
+              <h2 className="font-display font-bold text-lg text-white">Flash Card Generator</h2>
+              <span className="badge-new text-white px-2 py-0.5 rounded font-bold uppercase ml-auto">NEW</span>
+            </div>
+            <div className="p-6 space-y-5">
+              {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">{error}</div>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Source Document</label>
+                  <select value={selSub} onChange={e=>setSelSub(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="">— Select document —</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Topic</label>
+                  <input type="text" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Neurotransmitters" className="w-full p-3 rounded-xl input-dark" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Number of Cards (enter any number)</label>
+                  <input type="number" min="3" max="100" value={count} onChange={e=>setCount(e.target.value)} placeholder="e.g. 20" className="w-full p-3 rounded-xl input-dark text-center font-mono text-xl" />
+                  <p className="text-xs text-slate-600 mt-1.5 text-center">Recommended: 10–30 cards per session</p>
+                </div>
+              </div>
+              <button onClick={handleGen} disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                {loading ? <><Loader2 size={16} className="animate-spin"/> Generating Cards...</> : <><FlipHorizontal size={16}/> Generate Flash Cards</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function FlashcardPlayer({ cards, onBack }) {
+      const [idx, setIdx] = useState(0);
+      const [flipped, setFlipped] = useState(false);
+      const [known, setKnown] = useState(new Set());
+      const [unknown, setUnknown] = useState(new Set());
+
+      const goNext = () => { setIdx(p => Math.min(p+1, cards.cards.length-1)); setFlipped(false); };
+      const goPrev = () => { setIdx(p => Math.max(p-1, 0)); setFlipped(false); };
+      const markKnown = () => { setKnown(p => new Set([...p, idx])); setUnknown(p => { const n = new Set(p); n.delete(idx); return n; }); goNext(); };
+      const markUnknown = () => { setUnknown(p => new Set([...p, idx])); setKnown(p => { const n = new Set(p); n.delete(idx); return n; }); goNext(); };
+
+      const card = cards.cards[idx];
+      const progress = ((idx+1) / cards.cards.length) * 100;
+
+      return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={onBack} className="text-sm font-semibold text-slate-400 hover:text-white flex items-center gap-1"><ChevronLeft size={16}/> Back</button>
+            <div className="text-center">
+              <p className="font-display font-bold text-sm text-white">{cards.topic}</p>
+              <p className="text-xs text-slate-500">{idx+1} / {cards.cards.length}</p>
+            </div>
+            <div className="flex gap-3 text-xs font-bold">
+              <span className="text-emerald-400">✓ {known.size}</span>
+              <span className="text-red-400">✗ {unknown.size}</span>
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div className="w-full bg-slate-800 rounded-full h-1.5 mb-6">
+            <div className="h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all" style={{width:`${progress}%`}} />
+          </div>
+
+          {/* Card */}
+          <div className="flip-card h-64 md:h-72 mb-6" style={{minHeight:'16rem'}} onClick={() => setFlipped(!flipped)}>
+            <div className={`flip-card-inner w-full h-full ${flipped ? 'flipped' : ''}`} style={{minHeight:'16rem'}}>
+              {/* Front */}
+              <div className="flip-card-front w-full h-full dark-card rounded-2xl flex flex-col items-center justify-center p-8 text-center cursor-pointer" style={{minHeight:'16rem'}}>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Question / Term</p>
+                <p className="font-display font-bold text-xl md:text-2xl text-white leading-snug">{card.front}</p>
+                <p className="text-xs text-slate-600 mt-6">Tap to reveal answer</p>
+              </div>
+              {/* Back */}
+              <div className="flip-card-back w-full dark-card rounded-2xl flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-blue-900/30 to-indigo-900/20 border border-blue-500/10" style={{minHeight:'16rem'}}>
+                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">Answer</p>
+                <p className="text-slate-200 text-sm md:text-base leading-relaxed">{card.back}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 justify-center mb-4">
+            <button onClick={markUnknown} className="flex-1 py-3 bg-red-500/10 border border-red-500/20 text-red-400 font-semibold rounded-xl hover:bg-red-500/20 transition-all flex items-center justify-center gap-2">
+              <X size={16}/> Need Review
+            </button>
+            <button onClick={() => { setFlipped(!flipped); }} className="px-4 py-3 bg-slate-800 border border-white/5 text-slate-400 rounded-xl hover:bg-slate-700">
+              <RotateCcw size={16}/>
+            </button>
+            <button onClick={markKnown} className="flex-1 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold rounded-xl hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">
+              <Check size={16}/> Got It!
+            </button>
+          </div>
+
+          <div className="flex justify-between">
+            <button onClick={goPrev} disabled={idx===0} className="px-4 py-2 text-sm text-slate-400 hover:text-white disabled:opacity-30 flex items-center gap-1"><ChevronLeft size={16}/> Prev</button>
+            <button onClick={goNext} disabled={idx===cards.cards.length-1} className="px-4 py-2 text-sm text-slate-400 hover:text-white disabled:opacity-30 flex items-center gap-1">Next <ChevronRight size={16}/></button>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Chat with Document ───────────────────────────────────────────────────
+    function ChatWithDoc({ subjects }) {
+      const [selSub, setSelSub] = useState('');
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState('');
+      const [loading, setLoading] = useState(false);
+      const endRef = useRef(null);
+
+      useEffect(() => { endRef.current?.scrollIntoView({ behavior:'smooth' }); }, [messages]);
+
+      const sub = subjects.find(s => s.id === selSub);
+
+      const sendMsg = async () => {
+        if (!input.trim() || !selSub || loading) return;
+        const userMsg = { role:'user', content:input };
+        const newMsgs = [...messages, userMsg];
+        setMessages(newMsgs); setInput(''); setLoading(true);
+        try {
+          const systemPrompt = `You are a helpful academic tutor. Answer ONLY based on the provided source document. If the answer is not in the document, say "This information is not in the provided document." Be concise and clear.\n\nSOURCE DOCUMENT:\n"""${sub.content.substring(0,100000)}"""`;
+          const history = newMsgs.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n');
+          const res = await callClaude(history, systemPrompt);
+          setMessages(p => [...p, { role:'assistant', content:res }]);
+        } catch(err) {
+          setMessages(p => [...p, { role:'assistant', content:`Error: ${err.message}` }]);
+        } finally { setLoading(false); }
+      };
+
+      return (
+        <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+          {/* Header */}
+          <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-white/5 bg-slate-900/50">
+            <div className="max-w-3xl mx-auto flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare size={16} className="text-cyan-400" />
+                <span className="font-display font-bold text-sm text-white">Chat with Document</span>
+                <span className="badge-new text-white px-1.5 py-0.5 rounded font-bold uppercase">NEW</span>
+              </div>
+              <select value={selSub} onChange={e => { setSelSub(e.target.value); setMessages([]); }} className="ml-auto p-2 rounded-lg input-dark text-sm">
+                <option value="">— Select document —</option>
+                {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6">
+            <div className="max-w-3xl mx-auto space-y-4">
+              {!selSub ? (
+                <div className="text-center py-20">
+                  <MessageSquare size={40} className="text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-500 text-sm">Select a document to start chatting with it</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
+                    <MessageSquare size={20} className="text-cyan-400" />
+                  </div>
+                  <p className="text-slate-300 font-semibold mb-1">Ready to chat about <span className="text-cyan-400">{sub?.name}</span></p>
+                  <p className="text-slate-500 text-sm">Ask any question about your document's content</p>
+                </div>
+              ) : messages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'chat-bubble-user text-white rounded-br-md' : 'chat-bubble-ai text-slate-200 rounded-bl-md'}`}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="chat-bubble-ai px-4 py-3 rounded-2xl rounded-bl-md flex items-center gap-2">
+                    <Loader2 size={14} className="text-blue-400 animate-spin" />
+                    <span className="text-slate-400 text-sm">Analyzing document...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={endRef} />
+            </div>
+          </div>
+
+          {/* Input */}
+          <div className="flex-shrink-0 px-4 md:px-6 py-4 border-t border-white/5 bg-slate-900/50">
+            <div className="max-w-3xl mx-auto flex gap-3">
+              <input type="text" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e => e.key==='Enter' && sendMsg()}
+                placeholder={selSub ? "Ask anything about this document..." : "Select a document first"}
+                disabled={!selSub || loading}
+                className="flex-1 p-3 rounded-xl input-dark disabled:opacity-30" />
+              <button onClick={sendMsg} disabled={!input.trim() || !selSub || loading}
+                className="w-12 h-12 btn-primary rounded-xl flex items-center justify-center disabled:opacity-30 flex-shrink-0">
+                <Send size={16} className="text-white" />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Smart Translator ─────────────────────────────────────────────────────
+    function SmartTranslator({ subjects }) {
+      const [selSub, setSelSub] = useState('');
+      const [topic, setTopic] = useState('');
+      const [targetLang, setTargetLang] = useState('Arabic');
+      const [keepTerms, setKeepTerms] = useState(true);
+      const [loading, setLoading] = useState(false);
+      const [result, setResult] = useState('');
+      const [error, setError] = useState('');
+      const [copied, setCopied] = useState(false);
+
+      const handleTranslate = async () => {
+        if (!selSub || !topic.trim()) return setError('Select a document and enter a topic.');
+        const sub = subjects.find(s => s.id === selSub);
+        if (!sub) return;
+        setLoading(true); setError(''); setResult('');
+        const termRule = keepTerms ? 'Keep all medical, scientific, anatomical, and technical terms in their original English form.' : 'Translate everything including technical terms.';
+        const systemPrompt = `You are an expert academic translator. Translate the content clearly and naturally. ${termRule}`;
+        const userPrompt = `Source Document:\n"""${sub.content.substring(0,100000)}"""\n\nTranslate content about "${topic}" to ${targetLang}.\n\nProvide a clear, well-structured translation. Maintain the academic tone.`;
+        try {
+          const res = await callClaude(userPrompt, systemPrompt);
+          setResult(res);
+        } catch(err) { setError(err.message); }
+        finally { setLoading(false); }
+      };
+
+      const copyText = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
+      return (
+        <div className="p-4 md:p-8 max-w-4xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl overflow-hidden mb-5">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-amber-600/10">
+              <Globe size={18} className="text-amber-400" />
+              <h2 className="font-display font-bold text-lg text-white">Smart Translator</h2>
+              <span className="badge-new text-white px-2 py-0.5 rounded font-bold uppercase ml-auto">NEW</span>
+            </div>
+            <div className="p-6 space-y-5">
+              {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">{error}</div>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Source Document</label>
+                  <select value={selSub} onChange={e=>setSelSub(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="">— Select document —</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Topic to Translate</label>
+                  <input type="text" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Cardiac Cycle" className="w-full p-3 rounded-xl input-dark" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Target Language</label>
+                  <select value={targetLang} onChange={e=>setTargetLang(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    {['Arabic','French','Spanish','German','Turkish','Persian','Urdu','Portuguese','Chinese','Japanese'].map(l => <option key={l}>{l}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-3 pt-6">
+                  <button onClick={() => setKeepTerms(!keepTerms)}
+                    className={`relative w-11 h-6 rounded-full transition-all ${keepTerms ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${keepTerms ? 'left-6' : 'left-1'}`} />
+                  </button>
+                  <label className="text-sm text-slate-400 cursor-pointer" onClick={() => setKeepTerms(!keepTerms)}>Keep technical terms in English</label>
+                </div>
+              </div>
+              <button onClick={handleTranslate} disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                {loading ? <><Loader2 size={16} className="animate-spin"/> Translating...</> : <><Globe size={16}/> Translate</>}
+              </button>
+            </div>
+          </div>
+          {result && (
+            <div className="dark-card rounded-2xl overflow-hidden">
+              <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+                <h3 className="font-semibold text-sm text-slate-300">{targetLang} Translation</h3>
+                <button onClick={copyText} className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
+                  {copied ? <Check size={14} className="text-emerald-400"/> : <Copy size={14}/>} {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <div className={`p-6 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap ${targetLang === 'Arabic' || targetLang === 'Persian' || targetLang === 'Urdu' ? 'text-right' : ''}`} dir={['Arabic','Persian','Urdu'].includes(targetLang) ? 'rtl' : 'ltr'}>
+                {result}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ─── Mind Map Generator ───────────────────────────────────────────────────
+    function MindMapGenerator({ subjects }) {
+      const [selSub, setSelSub] = useState('');
+      const [topic, setTopic] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [mapData, setMapData] = useState(null);
+      const [error, setError] = useState('');
+
+      const handleGen = async () => {
+        if (!selSub || !topic.trim()) return setError('Select a document and topic.');
+        const sub = subjects.find(s => s.id === selSub);
+        if (!sub) return;
+        setLoading(true); setError(''); setMapData(null);
+        const systemPrompt = `You are an expert at creating mind maps. Return ONLY valid JSON. No text before or after.`;
+        const userPrompt = `Source:\n"""${sub.content.substring(0,80000)}"""\n\nCreate a mind map for "${topic}".\n\nReturn JSON:\n{"center":"${topic}","branches":[{"title":"Branch Name","color":"#hexcolor","points":["point1","point2","point3"]}]}\n\nCreate 4-6 branches. ONLY JSON.`;
+        try {
+          const data = await callClaude(userPrompt, systemPrompt, true);
+          setMapData(data);
+        } catch(err) { setError(err.message); }
+        finally { setLoading(false); }
+      };
+
+      const branchColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899'];
+
+      return (
+        <div className="p-4 md:p-8 max-w-5xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl overflow-hidden mb-5">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-rose-600/10">
+              <Map size={18} className="text-rose-400" />
+              <h2 className="font-display font-bold text-lg text-white">Mind Map Generator</h2>
+              <span className="badge-new text-white px-2 py-0.5 rounded font-bold uppercase ml-auto">NEW</span>
+            </div>
+            <div className="p-6 space-y-4">
+              {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm">{error}</div>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Source Document</label>
+                  <select value={selSub} onChange={e=>setSelSub(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="">— Select document —</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Central Topic</label>
+                  <input type="text" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Autonomic Nervous System" className="w-full p-3 rounded-xl input-dark" />
+                </div>
+              </div>
+              <button onClick={handleGen} disabled={loading} className="w-full py-3 rounded-xl btn-primary text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                {loading ? <><Loader2 size={16} className="animate-spin"/> Generating Map...</> : <><Map size={16}/> Generate Mind Map</>}
+              </button>
+            </div>
+          </div>
+
+          {mapData && (
+            <div className="dark-card rounded-2xl p-6 overflow-x-auto">
+              {/* Center */}
+              <div className="flex justify-center mb-8">
+                <div className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-display font-bold text-xl shadow-lg shadow-blue-500/25">
+                  {mapData.center}
+                </div>
+              </div>
+
+              {/* Branches Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(mapData.branches || []).map((branch, i) => {
+                  const color = branch.color || branchColors[i % branchColors.length];
+                  return (
+                    <div key={i} className="rounded-xl overflow-hidden border border-white/5" style={{borderColor:`${color}30`}}>
+                      <div className="px-4 py-3 font-display font-bold text-sm" style={{backgroundColor:`${color}20`, color}}>
+                        {branch.title}
+                      </div>
+                      <div className="p-4 space-y-2">
+                        {(branch.points || []).map((point, j) => (
+                          <div key={j} className="flex items-start gap-2 text-xs text-slate-300">
+                            <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{backgroundColor:color}} />
+                            {point}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ─── Integrated Pathway ───────────────────────────────────────────────────
+    function IntegratedPathway({ subjects, onSaveResult, onSaveExpl, onSaveSum }) {
+      const [step, setStep] = useState('config');
+      const [selSub, setSelSub] = useState('');
+      const [topic, setTopic] = useState('');
+      const [pwHours, setPwHours] = useState(0);
+      const [pwMinutes, setPwMinutes] = useState(30);
+      const [pwSeconds, setPwSeconds] = useState(0);
+      const [timeLeft, setTimeLeft] = useState(0);
+      const [totalTime, setTotalTime] = useState(0);
+      const [loadingStr, setLoadingStr] = useState('');
+      const [explData, setExplData] = useState('');
+      const [sumData, setSumData] = useState('');
+      const [quizData, setQuizData] = useState(null);
+      const [quizAns, setQuizAns] = useState({});
+      const [quizIdx, setQuizIdx] = useState(0);
+
+      useEffect(() => {
+        if (step === 'config' || step === 'review' || timeLeft <= 0) return;
+        const t = setInterval(() => setTimeLeft(p => { if(p<=1){clearInterval(t); finishPathway(); return 0;} return p-1; }), 1000);
+        return () => clearInterval(t);
+      }, [step, timeLeft]);
+
+      const startPathway = async () => {
+        if (!selSub || !topic.trim()) return alert('Select document and topic.');
+        const tSecs = pwHours * 3600 + pwMinutes * 60 + pwSeconds;
+        if (tSecs < 60) return alert('Minimum session duration is 1 minute.');
+        const sub = subjects.find(s => s.id === selSub);
+        if (!sub) return;
+        setTotalTime(tSecs); setTimeLeft(tSecs);
+        try {
+          setLoadingStr('Generating Explanation...');
+          const expl = await callClaude(`Source:\n"""${sub.content.substring(0,80000)}"""\nExplain "${topic}" in detail using HTML.`, `You are an expert tutor. ONLY use source text. Return clean HTML. No markdown.`);
+          const cleanExpl = expl.replace(/```html\n?/gi,'').replace(/```\n?/g,'').trim();
+          setExplData(cleanExpl);
+          onSaveExpl({ topic, subjectId: selSub, html: cleanExpl, type: 'Pathway' });
+
+          setLoadingStr('Generating Summary...');
+          const sum = await callClaude(`Source:\n"""${sub.content.substring(0,80000)}"""\nSummarize "${topic}" with tables and bullets.`, `You are a summarizer. Return clean HTML only. No markdown.`);
+          const cleanSum = sum.replace(/```html\n?/gi,'').replace(/```\n?/g,'').trim();
+          setSumData(cleanSum);
+          onSaveSum({ title: topic, outputType: 'document', html: cleanSum });
+
+          setLoadingStr('Generating Assessment...');
+          const quiz = await callClaude(`Source:\n"""${sub.content.substring(0,80000)}"""\nCreate 5 MCQs about "${topic}".\nReturn JSON: {"title":"${topic}","questions":[{"questionText":"","options":["","","",""],"correctAnswerIndex":0}]}`, `You are an assessment generator. Return ONLY valid JSON.`, true);
+          if (!quiz.questions?.length) throw new Error('Could not generate questions.');
+          setQuizData(quiz);
+          setLoadingStr(''); setStep('explanation');
+        } catch(err) {
+          alert('Error: ' + err.message);
+          setLoadingStr(''); setStep('config');
+        }
+      };
+
+      const finishPathway = () => {
+        let score = 0;
+        if (quizData?.questions) {
+          quizData.questions.forEach((q,i) => { if(quizAns[i]===q.correctAnswerIndex) score++; });
+          onSaveResult({ quizTitle: `Pathway: ${topic}`, score, totalQuestions: quizData.questions.length, percentage: Math.round((score/quizData.questions.length)*100) });
+        }
+        setStep('review');
+      };
+
+      const formatTime = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+      const timePct = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
+
+      if (loadingStr) return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center">
+          <div className="relative w-20 h-20 mb-8">
+            <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
+            <div className="absolute inset-2 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+            <Compass className="absolute inset-4 text-indigo-400" size={24} />
+          </div>
+          <h2 className="font-display font-bold text-2xl text-white mb-2">Initializing Pathway</h2>
+          <p className="text-slate-400 text-sm">{loadingStr}</p>
+        </div>
+      );
+
+      if (step === 'config') return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
+          <div className="dark-card rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3 bg-indigo-600/10">
+              <Compass size={18} className="text-indigo-400" />
+              <h2 className="font-display font-bold text-lg text-white">Integrated Pathway</h2>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl text-sm text-indigo-300">
+                This tool combines Explanation → Synthesis → Assessment into one timed session.
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Source Document</label>
+                  <select value={selSub} onChange={e=>setSelSub(e.target.value)} className="w-full p-3 rounded-xl input-dark">
+                    <option value="">— Select document —</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Topic</label>
+                  <input type="text" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Cardiac Output" className="w-full p-3 rounded-xl input-dark" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Session Duration (Hours : Minutes : Seconds)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1 text-center">Hours</p>
+                      <input type="number" min="0" max="23" value={pwHours} onChange={e=>setPwHours(Number(e.target.value))} className="w-full p-3 rounded-xl input-dark text-center font-mono text-lg" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1 text-center">Minutes</p>
+                      <input type="number" min="0" max="59" value={pwMinutes} onChange={e=>setPwMinutes(Number(e.target.value))} className="w-full p-3 rounded-xl input-dark text-center font-mono text-lg" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1 text-center">Seconds</p>
+                      <input type="number" min="0" max="59" value={pwSeconds} onChange={e=>setPwSeconds(Number(e.target.value))} className="w-full p-3 rounded-xl input-dark text-center font-mono text-lg" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1.5 text-center">Total: {pwHours}h {pwMinutes}m {pwSeconds}s = {pwHours*3600+pwMinutes*60+pwSeconds}s</p>
+                </div>
+              </div>
+              <button onClick={startPathway} className="w-full py-4 rounded-xl btn-primary text-white font-bold text-base flex items-center justify-center gap-2">
+                <PlayCircle size={20}/> Begin Pathway
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+
+      if (step === 'review') {
+        const score = quizData?.questions?.filter((q,i) => quizAns[i] === q.correctAnswerIndex).length || 0;
+        const pct = quizData ? Math.round((score/quizData.questions.length)*100) : 0;
+        return (
+          <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in text-center">
+            <div className="dark-card rounded-2xl p-10 mb-6">
+              <CheckCircle2 size={52} className="text-emerald-400 mx-auto mb-4" />
+              <h2 className="font-display font-bold text-3xl text-white mb-2">Pathway Complete!</h2>
+              <p className="text-slate-400 mb-6">You scored <span className="text-white font-bold">{score}/{quizData?.questions.length}</span> ({pct}%)</p>
+              <button onClick={() => setStep('config')} className="px-8 py-3 btn-primary text-white font-semibold rounded-xl">Start New Pathway</button>
+            </div>
+          </div>
+        );
+      }
+
+      // Active session tabs
+      const tabs = [
+        { id:'explanation', label:'Explanation', icon:<Lightbulb size={14}/> },
+        { id:'summary', label:'Summary', icon:<FileText size={14}/> },
+        { id:'quiz', label:'Assessment', icon:<CheckSquare size={14}/> },
+      ];
+
+      return (
+        <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+          {/* Session Header */}
+          <div className="flex-shrink-0 border-b border-white/5 bg-slate-900/50 px-4 py-2.5">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <div className="flex gap-1">
+                {tabs.map(tab => (
+                  <button key={tab.id} onClick={() => setStep(tab.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${step === tab.id ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}>
+                    {tab.icon}{tab.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className={`font-mono text-sm font-bold ${timeLeft < 300 ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>
+                  {formatTime(timeLeft)}
+                </div>
+                <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${timePct < 20 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{width:`${timePct}%`}} />
+                </div>
+                <button onClick={finishPathway} className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold rounded-lg">Finish</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="max-w-4xl mx-auto">
+              {step === 'explanation' && (
+                <div className="dark-card rounded-2xl p-6">
+                  <h3 className="font-display font-bold text-lg text-white mb-4 flex items-center gap-2"><Lightbulb size={18} className="text-blue-400"/> {topic} — Explanation</h3>
+                  <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{__html: explData}} />
+                </div>
+              )}
+              {step === 'summary' && (
+                <div className="bg-white text-black rounded-2xl p-8">
+                  <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{__html: sumData}} />
+                </div>
+              )}
+              {step === 'quiz' && quizData && (
+                <div className="dark-card rounded-2xl p-6 space-y-4">
+                  <h3 className="font-display font-bold text-lg text-white mb-4">Assessment — {topic}</h3>
+                  {quizData.questions.map((q,i) => (
+                    <div key={i} className="border border-white/5 rounded-xl p-4">
+                      <p className="font-semibold text-sm text-white mb-3">{i+1}. {q.questionText}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {q.options.map((opt,j) => (
+                          <button key={j} onClick={() => setQuizAns({...quizAns,[i]:j})}
+                            className={`p-3 rounded-lg text-left text-xs font-medium transition-all border ${quizAns[i]===j ? 'bg-blue-600/20 border-blue-500/40 text-blue-300' : 'border-white/5 text-slate-400 hover:bg-white/3'}`}>
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Settings ────────────────────────────────────────────────────────────
+    function Settings({ user, clearLocalData, isDarkMode, setIsDarkMode }) {
+      const [pwd, setPwd] = useState('');
+      const [msg, setMsg] = useState('');
+      const [fName, setFName] = useState('');
+      const [lName, setLName] = useState('');
+      const [nameMsg, setNameMsg] = useState('');
+
+      const handleLogout = async () => {
+        if(confirm('Log out and clear local cache?')) { clearLocalData(); await signOut(auth); }
+      };
+      const handleChangeName = async () => {
+        if(!fName || !lName) return setNameMsg('Fill both fields.');
+        try { await updateProfile(user, { displayName: `${fName} ${lName}`.trim() }); setNameMsg('Updated! Reloading...'); setTimeout(() => window.location.reload(), 1500); }
+        catch(e) { setNameMsg('Error updating.'); }
+      };
+
+      return (
+        <div className="p-4 md:p-8 max-w-3xl mx-auto animate-fade-in">
+          <div className="flex items-center gap-3 mb-6">
+            <SettingsIcon size={20} className="text-slate-400" />
+            <h2 className="font-display font-bold text-xl text-white">Platform Settings</h2>
+          </div>
+          <div className="space-y-4">
+            {/* Profile */}
+            <div className="dark-card rounded-2xl p-6">
+              <h3 className="font-display font-semibold text-base text-white mb-4 flex items-center gap-2"><User size={16} className="text-blue-400"/> Display Name</h3>
+              {nameMsg && <div className={`mb-3 p-3 rounded-lg text-sm ${nameMsg.includes('Error') ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>{nameMsg}</div>}
+              <div className="flex gap-3">
+                <input type="text" value={fName} onChange={e=>setFName(e.target.value)} placeholder="First name" className="flex-1 p-3 rounded-xl input-dark" />
+                <input type="text" value={lName} onChange={e=>setLName(e.target.value)} placeholder="Last name" className="flex-1 p-3 rounded-xl input-dark" />
+                <button onClick={handleChangeName} className="px-5 btn-primary text-white font-semibold rounded-xl text-sm">Update</button>
+              </div>
+            </div>
+
+            {/* Security */}
+            <div className="dark-card rounded-2xl p-6">
+              <h3 className="font-display font-semibold text-base text-white mb-4 flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-400"/> Security</h3>
+              {msg && <div className="mb-3 p-3 bg-emerald-500/10 text-emerald-400 rounded-lg text-sm">{msg}</div>}
+              <div className="flex gap-3">
+                <input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="New password (min 6)" className="flex-1 p-3 rounded-xl input-dark" />
+                <button onClick={async () => { try { await updatePassword(user, pwd); setMsg('Password updated!'); setPwd(''); } catch(e) { setMsg('Please re-login first.'); } }} className="px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-colors">Update</button>
+              </div>
+            </div>
+
+            {/* Account */}
+            <div className="dark-card rounded-2xl p-6 flex items-center justify-between">
+              <div>
+                <h3 className="font-display font-semibold text-base text-white mb-0.5">Account</h3>
+                <p className="text-sm text-blue-400 font-medium">{user.email}</p>
+              </div>
+              <button onClick={handleLogout} className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 font-semibold rounded-xl text-sm flex items-center gap-2 hover:bg-red-500/20 transition-all">
+                <LogOut size={14}/> Sign Out
+              </button>
+            </div>
+
+            {/* Dark / Light Mode Toggle */}
+            <div className="dark-card rounded-2xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-display font-semibold text-base text-white mb-0.5 flex items-center gap-2">
+                    <span>{isDarkMode ? "🌙" : "☀️"}</span> Interface Theme
+                  </h3>
+                  <p className="text-xs text-slate-500">{isDarkMode ? "Dark mode is active — easier on the eyes." : "Light mode is active."}</p>
+                </div>
+                <button onClick={() => setIsDarkMode(!isDarkMode)}
+                  className={`relative w-14 h-7 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all duration-300 shadow-sm ${isDarkMode ? 'left-8' : 'left-1'}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Claude API Info */}
+            <div className="dark-card rounded-2xl p-6 border border-blue-500/10">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={14} className="text-blue-400" />
+                <h3 className="font-display font-semibold text-sm text-white">AI Engine</h3>
+                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded">Active</span>
+              </div>
+              <p className="text-xs text-slate-500">Powered by Gemini 2.0 Flash — fast and capable AI for academic assistance. Works directly in your browser.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
